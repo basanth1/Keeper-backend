@@ -6,17 +6,27 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { db } from "./db.js";
 import "./auth.js";
+import pgSession from "connect-pg-simple";
+const PgSession = pgSession(session);
 
 dotenv.config();
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({ origin: "https://keeper-frontend-p4xl.onrender.com", credentials: true }));
 app.use(bodyParser.json());
 
 app.use(session({
+  store: new PgSession({
+    pool: db, // using the same PG client
+    tableName: "session"
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  cookie: {
+    sameSite: "none",
+    secure: true
+  }
 }));
 
 app.use(passport.initialize());
@@ -31,7 +41,7 @@ app.get("/auth/google", passport.authenticate("google", {
 app.get("/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
-    res.redirect("http://localhost:5173");
+    res.redirect("https://keeper-frontend-p4xl.onrender.com");
   }
 );
 
@@ -50,7 +60,7 @@ app.get("/logout", (req, res, next) => {
     if (err) return next(err);
     req.session.destroy(() => {
       res.clearCookie("connect.sid");
-      res.redirect("http://localhost:5173");
+      res.redirect("https://keeper-frontend-p4xl.onrender.com");
     });
   });
 });
