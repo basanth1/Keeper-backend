@@ -11,7 +11,7 @@ const PgSession = pgSession(session);
 
 dotenv.config();
 const app = express();
-
+app.set("trust proxy", 1);
 app.use(cors({ origin: "https://keeper-frontend-p4xl.onrender.com", credentials: true }));
 app.use(bodyParser.json());
 
@@ -41,9 +41,17 @@ app.get("/auth/google", passport.authenticate("google", {
 app.get("/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
-    res.redirect("https://keeper-frontend-p4xl.onrender.com");
+    // Force session to save before redirect
+    req.session.save(err => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).send("Session error");
+      }
+      res.redirect("https://keeper-frontend-p4xl.onrender.com");
+    });
   }
 );
+
 
 // Get authenticated user
 app.get("/me", (req, res) => {
